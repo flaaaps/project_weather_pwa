@@ -1,40 +1,76 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { fetchWeather } from './api/fetchWeather';
+
 import './App.css';
+import Header from "./components/header.js";
+import Search from "./components/search.js";
+import WeatherCard from "./components/WeatherCard.js";
+
+import Logo from './assets/png/logo-250x250.png'
 
 const App = () => {
-    const [query, setQuery] = useState('');
+    const [previousQuery, setPreviousQuery] = useState('')
     const [weather, setWeather] = useState({});
-    
-    const search = async (e) => {
-        if(e.key === 'Enter') {
-            const data = await fetchWeather(query);
+
+    const [hidden, setHidden] = useState(false)
+    const [currentLanguage, setCurrentLanguage] = useState(navigator.language.split("-")[1].toLocaleLowerCase())
+    const [canToggleLang, setCanToggleLang] = useState(true)
+
+    const langToggleTimeout = 750
+
+    useEffect(() => {
+        updateWeatherCardLanguage()
+        // eslint-disable-next-line
+    }, [currentLanguage])
+
+    const updateWeatherCardLanguage = () => {
+        if (previousQuery && canToggleLang) {
+            setCanToggleLang(false)
+            setHidden(true)
+            const promises = [fetchWeather(previousQuery, currentLanguage)
+                .then(data => {
+                    setWeather(data);
+                    setHidden(false)
+                    console.log("First one won")
+                }),
+                new Promise((resolve, reject) => {
+                    setTimeout(() => {
+                        console.log("Sec one won")
+                        resolve()
+                    }, langToggleTimeout)
+                })]
+            Promise.all(promises)
+                .then(() => {
+                    console.log("All done")
+                    setCanToggleLang(true)
+                })
+        }
+    }
+
+    const search = async (e, query, type) => {
+        if (e.key === 'Enter' || type === "btn") {
+            setHidden(true)
+            const data = await fetchWeather(query, currentLanguage);
 
             setWeather(data);
-            setQuery('');
+            setPreviousQuery(query)
+            setTimeout(() => {
+                setHidden(false)
+            }, 200)
         }
     }
 
     return (
-        <div className="main-container">
-            <input type="text"className="search"placeholder="Search..."value={query}onChange={(e) => setQuery(e.target.value)}onKeyPress={search}/>
-            {weather.main && (
-                <div className="city">
-                    <h2 className="city-name">
-                        <span>{weather.name}</span>
-                        <sup>{weather.sys.country}</sup>
-                    </h2>
-                    <div className="city-temp">
-                        {Math.round(weather.main.temp)}
-                        <sup>&deg;C</sup>
-                    </div>
-                    <div className="info">
-                        <img className="city-icon" src={`https://openweathermap.org/img/wn/${weather.weather[0].icon}@2x.png`} alt={weather.weather[0].description} />
-                        <p>{weather.weather[0].description}</p>
-                    </div>
-                </div>
-            )}
+        <div className="App">
+            <Header passCurrentLanguage={setCurrentLanguage} canToggleLang={canToggleLang}/>
+            <div className="main-container">
+                <img className="logo-brand" src={Logo} width="100" alt="Logo"/>
+                <Search searchWithData={search}/>
+                {weather.main && (
+                    <WeatherCard hidden={hidden} weather={weather}/>
+                )}
+            </div>
         </div>
     );
 }

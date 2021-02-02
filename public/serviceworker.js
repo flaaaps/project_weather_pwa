@@ -20,25 +20,33 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
             .then(() => {
-                return fetch(event.request) 
+                return fetch(event.request)
                     .catch(() => caches.match('offline.html'))
             })
     )
 });
 
-// Activate the SW
-self.addEventListener('activate', (event) => {
-    const cacheWhitelist = [];
-    cacheWhitelist.push(CACHE_NAME);
+// self.addEventListener("fetch", function (event) {
+//     event.respondWith(
+//         fetch(event.request).catch(function() {
+//             return caches.match(event.request)
+//         })
+//     )
+// })
 
-    event.waitUntil(
-        caches.keys().then((cacheNames) => Promise.all(
-            cacheNames.map((cacheName) => {
-                if(!cacheWhitelist.includes(cacheName)) {
-                    return caches.delete(cacheName);
-                }
-            })
-        ))
-            
-    )
-});
+// Activate the SW
+// self.addEventListener('activate', (event) => {
+//     const cacheWhitelist = [];
+//     cacheWhitelist.push(CACHE_NAME);
+//
+//     event.waitUntil(
+//         caches.keys().then((cacheNames) => Promise.all(
+//             cacheNames.map((cacheName) => {
+//                 if(!cacheWhitelist.includes(cacheName)) {
+//                     return caches.delete(cacheName);
+//                 }
+//             })
+//         ))
+//
+//     )
+// });
